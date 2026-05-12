@@ -56,9 +56,9 @@ function SchemaTree({ schema, depth, path, onSelectField }: {
         <span className="text-[#d4543c]">{schema.type}</span>
         {schema.description && <span className="text-[#8b8b82] text-xs truncate">{schema.description}</span>}
       </div>
-      {isContainer && schema.children && depth < 4 &&
+      {isContainer && schema.children && depth < 5 &&
         schema.children.map((c, i) => (
-          <SchemaTree key={i} schema={c} depth={depth + 1}
+          <SchemaTree key={i} schema={c} depth={isArray ? depth : depth + 1}
             path={isArray ? fieldPath : fieldPath}
             onSelectField={onSelectField} />
         ))}

@@ -97,7 +97,7 @@ export function guessFieldSchema(
   value: unknown,
   depth: number = 0
 ): FieldSchema | null {
-  if (depth > 4) return null
+  if (depth > 6) return null
   if (value === null || value === undefined) {
     return { name: '', type: 'null', required: false, description: '' }
   }
@@ -134,7 +134,7 @@ export interface FieldSchema {
 }
 
 function schemaToRows(schema: FieldSchema | null, prefix: string, depth: number): string[] {
-  if (!schema || depth > 4) return []
+  if (!schema || depth > 6) return []
   const rows: string[] = []
   const indent = '&emsp;'.repeat(depth)
 
