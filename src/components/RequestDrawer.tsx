@@ -339,14 +339,52 @@ function CopyBtn({ onClick, copied }: { onClick: () => void; copied: boolean }) 
 }
 
 function DepthInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const HINT_KEY = 'api-harbor-depth-hint-shown'
+  const [showHint, setShowHint] = useState(false)
+
+  useEffect(() => {
+    try { if (!localStorage.getItem(HINT_KEY)) setShowHint(true) } catch {}
+  }, [])
+
+  const dismissHint = () => {
+    setShowHint(false)
+    try { localStorage.setItem(HINT_KEY, '1') } catch {}
+  }
+
   return (
-    <label className="inline-flex items-center gap-1 text-[10px] text-[#8b8b82] font-mono">
-      depth
-      <input type="number" min={1} max={10} value={value}
-        onChange={e => { const v = Number(e.target.value); if (v >= 1 && v <= 10) onChange(v) }}
-        className="w-10 px-1 py-0.5 text-[11px] text-center bg-white border border-[#e4e1db]
-                   rounded text-[#1a1a18] outline-none focus:border-[#d4543c]/40"
-      />
-    </label>
+    <div className="relative">
+      <label className="inline-flex items-center gap-1.5 text-[10px] text-[#8b8b82] font-mono
+                        bg-[#f5f3ef] border border-[#e4e1db] rounded-md px-2 py-0.5
+                        hover:border-[#c4c1b8] transition-colors cursor-pointer">
+        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+        </svg>
+        schema depth
+        <input type="number" min={1} max={10} value={value}
+          onClick={e => e.stopPropagation()}
+          onChange={e => { const v = Number(e.target.value); if (v >= 1 && v <= 10) onChange(v); dismissHint() }}
+          className="w-9 px-1 py-px text-[11px] text-center bg-white border border-[#d4d2cc]
+                     rounded text-[#1a1a18] outline-none focus:border-[#d4543c]/40 font-mono"
+        />
+      </label>
+
+      {showHint && (
+        <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-[#1a1a18] text-white
+                        text-[11px] rounded-lg shadow-lg whitespace-nowrap z-20
+                        depth-hint">
+          <div className="flex items-start gap-2">
+            <span>控制 Schema 字段解析深度，<br />数值越大嵌套层级越深</span>
+            <button onClick={dismissHint}
+              className="text-[#b8b5ae] hover:text-white shrink-0 mt-0.5">
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="absolute top-full right-3 w-2 h-2 bg-[#1a1a18] rotate-45 -mt-1" />
+        </div>
+      )}
+    </div>
   )
 }
