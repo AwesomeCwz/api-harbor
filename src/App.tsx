@@ -19,6 +19,7 @@ export default function App() {
   const [parsing, setParsing] = useState(false)
   const [parseError, setParseError] = useState('')
   const [fileFilter, setFileFilter] = useState<string[]>([])
+  const [searchFields, setSearchFields] = useState<string[]>(['url','host','method','status','type','initiator','body'])
 
   const requests = useMemo(
     () => files.flatMap((f) => f.apis),
@@ -149,6 +150,8 @@ export default function App() {
               sortMode={sortMode}
               onSortMode={setSortMode}
               fileFilter={fileFilter}
+              searchFields={searchFields}
+              onSearchFieldsChange={setSearchFields}
             />
           </div>
         </>

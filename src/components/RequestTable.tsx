@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { ParsedAPI } from '../types/har'
 import type { SortMode } from '../lib/parser'
 import { sortRequests } from '../lib/parser'
@@ -13,7 +13,19 @@ interface Props {
   sortMode: SortMode
   onSortMode: (m: SortMode) => void
   fileFilter: string[]
+  searchFields: string[]
+  onSearchFieldsChange: (fields: string[]) => void
 }
+
+const SEARCH_FIELDS = [
+  { key: 'url', label: 'URL' },
+  { key: 'host', label: 'Host' },
+  { key: 'method', label: 'Method' },
+  { key: 'status', label: 'Status' },
+  { key: 'type', label: 'Type' },
+  { key: 'initiator', label: 'Initiator' },
+  { key: 'body', label: 'Body' },
+] as const
 
 const METHOD_COLOR: Record<string, string> = {
   GET:    'text-[#137333] border-[#a8d8b9] bg-[#e6f4ea]',
@@ -30,12 +42,19 @@ const STATUS_COLOR: Record<string, string> = {
   '5': 'text-[#c5221f] border-[#f0a8a8] bg-[#fce8e6]',
 }
 
-function searchText(r: ParsedAPI): string {
-  return [r.pathname, r.fullUrl, r.host, r.method, r.statusText,
-    r.initiatorType, r.initiatorUrl, r.responseType,
-    r.requestBody ? JSON.stringify(r.requestBody) : '',
-    r.responseBody ? JSON.stringify(r.responseBody) : '',
-  ].join(' ').toLowerCase()
+function searchText(r: ParsedAPI, fields: string[]): string {
+  const parts: string[] = []
+  if (fields.includes('url'))       parts.push(r.pathname, r.fullUrl)
+  if (fields.includes('host'))      parts.push(r.host)
+  if (fields.includes('method'))    parts.push(r.method)
+  if (fields.includes('status'))    parts.push(String(r.status), r.statusText)
+  if (fields.includes('type'))      parts.push(r.responseType)
+  if (fields.includes('initiator')) parts.push(r.initiatorType, r.initiatorUrl)
+  if (fields.includes('body')) {
+    if (r.requestBody) parts.push(JSON.stringify(r.requestBody))
+    if (r.responseBody) parts.push(JSON.stringify(r.responseBody))
+  }
+  return parts.join(' ').toLowerCase()
 }
 
 function shortType(mime: string): string {
@@ -64,16 +83,16 @@ function formatTime(iso: string): string {
 
 export default function RequestTable({
   requests, selectedId, onSelect, search, onSearchChange, sortMode, onSortMode,
-  fileFilter,
+  fileFilter, searchFields, onSearchFieldsChange,
 }: Props) {
   const lower = search.toLowerCase()
 
   const filtered = useMemo(() => {
     let list = requests
     if (fileFilter.length > 0) list = list.filter(r => fileFilter.includes(r.sourceFile))
-    if (lower) list = list.filter(r => searchText(r).includes(lower))
+    if (lower) list = list.filter(r => searchText(r, searchFields).includes(lower))
     return sortRequests(list, sortMode)
-  }, [requests, lower, sortMode, fileFilter])
+  }, [requests, lower, sortMode, fileFilter, searchFields])
 
   const maxTime = useMemo(
     () => Math.max(...filtered.map((r) => r.time), 1),
@@ -83,15 +102,15 @@ export default function RequestTable({
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Search bar */}
-      <div className="px-4 pt-3 pb-2 shrink-0">
-        <div className="relative">
+      <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
+        <div className="relative flex-1">
           <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#b8b5ae]"
                viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
           </svg>
           <input
             type="text"
-            placeholder="Filter by URL, host, body, initiator..."
+            placeholder="Filter..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-8 pr-8 py-1.5 text-[13px] bg-[#f5f3ef] border border-transparent
@@ -110,6 +129,14 @@ export default function RequestTable({
             </button>
           )}
         </div>
+
+        {/* Search fields filter */}
+        <SearchFieldsDropdown
+          fields={SEARCH_FIELDS.map(f => f.key)}
+          labels={Object.fromEntries(SEARCH_FIELDS.map(f => [f.key, f.label]))}
+          selected={searchFields}
+          onChange={onSearchFieldsChange}
+        />
       </div>
 
       {/* Table */}
@@ -242,6 +269,81 @@ export default function RequestTable({
         </span>
         <span>Sorted {sortMode === 'startTime' ? 'by time' : 'by duration'}</span>
       </div>
+    </div>
+  )
+}
+
+function SearchFieldsDropdown({ fields, labels, selected, onChange }: {
+  fields: string[]; labels: Record<string, string>; selected: string[]; onChange: (v: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const activeCount = selected.length
+  const allSelected = activeCount === fields.length
+
+  const toggle = (key: string) => {
+    if (selected.includes(key)) {
+      if (selected.length > 1) onChange(selected.filter(s => s !== key))
+    } else {
+      onChange([...selected, key])
+    }
+  }
+
+  const toggleAll = () => {
+    onChange(allSelected ? [fields[0]] : [...fields])
+  }
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1 px-2 py-1.5 text-[11px] rounded-lg font-mono border transition-colors
+          ${allSelected
+            ? 'border-[#e4e1db] text-[#8b8b82] hover:border-[#c4c1b8]'
+            : 'border-[#d4543c]/30 text-[#d4543c] bg-[#fef5f3]'
+          }`}
+      >
+        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+        </svg>
+        {allSelected ? 'All' : `${activeCount}/${fields.length}`}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-[#e4e1db]
+                          rounded-lg shadow-lg py-1 min-w-[150px]">
+            <button
+              onClick={toggleAll}
+              className="w-full text-left px-3 py-1.5 text-[11px] text-[#8b8b82] font-mono
+                         hover:bg-[#f5f3ef] border-b border-[#f0ede8]"
+            >
+              {allSelected ? 'Deselect all' : 'Select all'}
+            </button>
+            {fields.map(key => {
+              const checked = selected.includes(key)
+              return (
+                <button key={key} onClick={() => toggle(key)}
+                  className={`w-full flex items-center gap-2 px-3 py-1 text-[12px] font-mono
+                    hover:bg-[#f5f3ef] transition-colors
+                    ${checked ? 'text-[#1a1a18]' : 'text-[#b8b5ae]'}`}
+                >
+                  <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0
+                    ${checked ? 'bg-[#d4543c] border-[#d4543c]' : 'border-[#c4c1b8]'}`}
+                  >
+                    {checked && (
+                      <svg className="w-2 h-2 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                  </span>
+                  {labels[key]}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }
