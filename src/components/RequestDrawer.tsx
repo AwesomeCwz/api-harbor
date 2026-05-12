@@ -34,19 +34,34 @@ const TIMING_KEYS = [
   { key: 'receive', label: 'Receive', color: '#5e8fd9' },
 ]
 
-function SchemaTree({ schema, depth }: { schema: FieldSchema; depth: number }) {
+function SchemaTree({ schema, depth, path, onSelectField }: {
+  schema: FieldSchema; depth: number; path: string[]; onSelectField: (path: string[]) => void
+}) {
   const indent = depth * 20
   const isContainer = schema.type === 'object' || schema.type.startsWith('array<')
+  const isArray = schema.type.startsWith('array<')
+  const fieldPath = schema.name ? [...path, schema.name] : path
+
   return (
     <div>
-      <div className="flex items-center gap-2 py-0.5 font-mono text-[13px]" style={{ paddingLeft: indent }}>
+      <div
+        className="flex items-center gap-2 py-0.5 font-mono text-[13px] cursor-pointer
+                   hover:bg-[#fef5f3] rounded transition-colors -ml-1 px-1"
+        style={{ paddingLeft: indent }}
+        onClick={() => schema.name && onSelectField(fieldPath)}
+        title={schema.name ? fieldPath.join('.') : undefined}
+      >
         {schema.name && <span className="text-[#1a1a18] font-medium">{schema.name}</span>}
         <span className={schema.required ? 'text-[#d4543c]' : 'text-[#c4c1b8]'}>{schema.required ? '*' : '?'}</span>
         <span className="text-[#d4543c]">{schema.type}</span>
         {schema.description && <span className="text-[#8b8b82] text-xs truncate">{schema.description}</span>}
       </div>
       {isContainer && schema.children && depth < 4 &&
-        schema.children.map((c, i) => <SchemaTree key={i} schema={c} depth={depth + 1} />)}
+        schema.children.map((c, i) => (
+          <SchemaTree key={i} schema={c} depth={depth + 1}
+            path={isArray ? fieldPath : fieldPath}
+            onSelectField={onSelectField} />
+        ))}
     </div>
   )
 }
@@ -76,6 +91,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
   const [tab, setTab] = useState<Tab>('headers')
   const [visible, setVisible] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [highlightPath, setHighlightPath] = useState<string[]>([])
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
   useEffect(() => {
@@ -178,17 +194,17 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
               </Section>
               {r.requestBody !== undefined ? (
                 <Section title="Request Body" subtitle={r.contentType || undefined}>
-                  {requestSchema?.type === 'object' && requestSchema.children && (
+                  {requestSchema && (requestSchema.type === 'object' || requestSchema.type.startsWith('array<')) && requestSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
                       <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
-                      <SchemaTree schema={requestSchema} depth={0} />
+                      <SchemaTree schema={requestSchema} depth={0} path={[]} onSelectField={setHighlightPath} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider">Raw</span>
                     <CopyBtn onClick={() => copyJson(r.requestBody)} copied={copied} />
                   </div>
-                  <JsonViewer data={r.requestBody} />
+                  <JsonViewer data={r.requestBody} highlightPath={highlightPath} />
                 </Section>
               ) : <div className="text-[#8b8b82] text-sm italic">No request body</div>}
             </div>
@@ -198,17 +214,17 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
             <div className="space-y-5">
               {r.responseBody !== undefined ? (
                 <Section title="Response Body" subtitle={r.responseType || undefined}>
-                  {responseSchema?.type === 'object' && responseSchema.children && (
+                  {responseSchema && (responseSchema.type === 'object' || responseSchema.type.startsWith('array<')) && responseSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
                       <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
-                      <SchemaTree schema={responseSchema} depth={0} />
+                      <SchemaTree schema={responseSchema} depth={0} path={[]} onSelectField={setHighlightPath} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider">Raw</span>
                     <CopyBtn onClick={() => copyJson(r.responseBody)} copied={copied} />
                   </div>
-                  <JsonViewer data={r.responseBody} />
+                  <JsonViewer data={r.responseBody} highlightPath={highlightPath} />
                 </Section>
               ) : <div className="text-[#8b8b82] text-sm italic">No response body</div>}
             </div>
