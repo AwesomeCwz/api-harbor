@@ -169,6 +169,9 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
           <Meta label="Duration" value={`${r.time.toFixed(2)}ms`} mono />
           <Meta label="Size" value={`${(r.size / 1024).toFixed(1)} KB`} mono />
           {r.initiatorType && <Meta label="Initiator" value={r.initiatorType} />}
+          <div className="ml-auto">
+            <DepthInput value={maxDepth} onChange={setDepth} />
+          </div>
         </div>
 
         {/* Tabs */}
@@ -207,10 +210,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
                 <Section title="Request Body" subtitle={r.contentType || undefined}>
                   {requestSchema && (requestSchema.type === 'object' || requestSchema.type.startsWith('array<')) && requestSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider">Schema</span>
-                        <DepthInput value={maxDepth} onChange={setDepth} />
-                      </div>
+                      <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
                       <SchemaTree schema={requestSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} />
                     </div>
                   )}
