@@ -163,15 +163,13 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
         </div>
 
         {/* Meta */}
-        <div className="shrink-0 px-5 py-2 border-b border-[#e4e1db] flex flex-wrap items-center gap-x-5 gap-y-1">
+        <div className="shrink-0 px-5 py-2 border-b border-[#e4e1db] flex items-center gap-x-5 overflow-hidden">
           <Meta label="Host" value={r.host} />
           <Meta label="Status"><span className={`font-semibold ${statusCls}`}>{r.status} {r.statusText}</span></Meta>
           <Meta label="Duration" value={`${r.time.toFixed(2)}ms`} mono />
           <Meta label="Size" value={`${(r.size / 1024).toFixed(1)} KB`} mono />
           {r.initiatorType && <Meta label="Initiator" value={r.initiatorType} />}
-          <div className="ml-auto">
-            <DepthInput value={maxDepth} onChange={setDepth} />
-          </div>
+          <DepthInput value={maxDepth} onChange={setDepth} />
         </div>
 
         {/* Tabs */}
@@ -308,7 +306,7 @@ function Meta({ label, value, mono, children }: {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[#8b8b82] text-[11px]">{label}</span>
-      {children ?? <span className={`text-[#4a4a42] text-[11px] ${mono ? 'font-mono' : ''}`}>{value}</span>}
+      {children ?? <span className={`text-[#4a4a42] text-[11px] max-w-[180px] truncate ${mono ? 'font-mono' : ''}`}>{value}</span>}
     </div>
   )
 }
