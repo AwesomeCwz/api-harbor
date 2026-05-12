@@ -169,6 +169,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
           <Meta label="Duration" value={`${r.time.toFixed(2)}ms`} mono />
           <Meta label="Size" value={`${(r.size / 1024).toFixed(1)} KB`} mono />
           {r.initiatorType && <Meta label="Initiator" value={r.initiatorType} />}
+          <div className="flex-1" />
           <DepthInput value={maxDepth} onChange={setDepth} />
         </div>
 
