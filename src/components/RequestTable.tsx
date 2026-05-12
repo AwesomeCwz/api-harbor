@@ -15,6 +15,10 @@ interface Props {
   fileFilter: string[]
   searchFields: string[]
   onSearchFieldsChange: (fields: string[]) => void
+  methodFilter: string[]
+  onMethodFilterChange: (v: string[]) => void
+  statusFilter: string[]
+  onStatusFilterChange: (v: string[]) => void
 }
 
 const SEARCH_FIELDS = [
@@ -84,15 +88,19 @@ function formatTime(iso: string): string {
 export default function RequestTable({
   requests, selectedId, onSelect, search, onSearchChange, sortMode, onSortMode,
   fileFilter, searchFields, onSearchFieldsChange,
+  methodFilter, onMethodFilterChange,
+  statusFilter, onStatusFilterChange,
 }: Props) {
   const lower = search.toLowerCase()
 
   const filtered = useMemo(() => {
     let list = requests
     if (fileFilter.length > 0) list = list.filter(r => fileFilter.includes(r.sourceFile))
+    if (methodFilter.length > 0) list = list.filter(r => methodFilter.includes(r.method))
+    if (statusFilter.length > 0) list = list.filter(r => statusFilter.includes(String(r.status)[0] + 'xx'))
     if (lower) list = list.filter(r => searchText(r, searchFields).includes(lower))
     return sortRequests(list, sortMode)
-  }, [requests, lower, sortMode, fileFilter, searchFields])
+  }, [requests, lower, sortMode, fileFilter, searchFields, methodFilter, statusFilter])
 
   const maxTime = useMemo(
     () => Math.max(...filtered.map((r) => r.time), 1),
@@ -153,8 +161,16 @@ export default function RequestTable({
           </colgroup>
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-[#e4e1db] bg-[#faf9f7]">
-              <Th>Method</Th>
-              <Th center>Status</Th>
+              <Th>
+                <ColumnFilter label="Method"
+                  options={['GET','POST','PUT','PATCH','DELETE']}
+                  selected={methodFilter} onChange={onMethodFilterChange} />
+              </Th>
+              <Th center>
+                <ColumnFilter label="Status"
+                  options={['2xx','3xx','4xx','5xx']}
+                  selected={statusFilter} onChange={onStatusFilterChange} />
+              </Th>
               <Th>Path</Th>
               <Th>Initiator</Th>
               <Th center>Type</Th>
@@ -338,6 +354,65 @@ function SearchFieldsDropdown({ fields, labels, selected, onChange }: {
                     )}
                   </span>
                   {labels[key]}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function ColumnFilter({ label, options, selected, onChange }: {
+  label: string; options: string[]; selected: string[]; onChange: (v: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const active = selected.length > 0
+
+  const toggle = (opt: string) => {
+    if (selected.includes(opt)) onChange(selected.filter(s => s !== opt))
+    else onChange([...selected, opt])
+  }
+
+  return (
+    <div className="relative inline-flex items-center">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider
+          transition-colors ${active ? 'text-[#d4543c]' : 'text-[#8b8b82] hover:text-[#1a1a18]'}`}
+      >
+        {label}
+        <svg className={`w-2.5 h-2.5 transition-transform ${active ? 'rotate-180' : ''}`}
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {active && <span className="w-1 h-1 rounded-full bg-[#d4543c] ml-0.5" />}
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-[#e4e1db]
+                          rounded-lg shadow-lg py-1 min-w-[110px]">
+            {options.map(opt => {
+              const checked = selected.includes(opt)
+              return (
+                <button key={opt} onClick={() => toggle(opt)}
+                  className={`w-full flex items-center gap-2 px-3 py-1 text-[11px] font-mono
+                    hover:bg-[#f5f3ef] transition-colors
+                    ${checked ? 'text-[#1a1a18]' : 'text-[#b8b5ae]'}`}
+                >
+                  <span className={`w-3 h-3 rounded border flex items-center justify-center shrink-0
+                    ${checked ? 'bg-[#d4543c] border-[#d4543c]' : 'border-[#c4c1b8]'}`}
+                  >
+                    {checked && (
+                      <svg className="w-1.5 h-1.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                  </span>
+                  {opt}
                 </button>
               )
             })}

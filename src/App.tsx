@@ -20,6 +20,8 @@ export default function App() {
   const [parseError, setParseError] = useState('')
   const [fileFilter, setFileFilter] = useState<string[]>([])
   const [searchFields, setSearchFields] = useState<string[]>(['url','host','method','status','type','initiator','body'])
+  const [methodFilter, setMethodFilter] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
 
   const requests = useMemo(
     () => files.flatMap((f) => f.apis),
@@ -152,6 +154,10 @@ export default function App() {
               fileFilter={fileFilter}
               searchFields={searchFields}
               onSearchFieldsChange={setSearchFields}
+              methodFilter={methodFilter}
+              onMethodFilterChange={setMethodFilter}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
             />
           </div>
         </>
