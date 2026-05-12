@@ -95,14 +95,15 @@ export function sortRequests(list: ParsedAPI[], mode: SortMode): ParsedAPI[] {
 
 export function guessFieldSchema(
   value: unknown,
-  depth: number = 0
+  depth: number = 0,
+  maxDepth: number = 6,
 ): FieldSchema | null {
-  if (depth > 6) return null
+  if (depth > maxDepth) return null
   if (value === null || value === undefined) {
     return { name: '', type: 'null', required: false, description: '' }
   }
   if (Array.isArray(value)) {
-    const item = guessFieldSchema(value[0], depth + 1)
+    const item = guessFieldSchema(value[0], depth + 1, maxDepth)
     return {
       name: '',
       type: `array<${item?.type ?? 'unknown'}>`,
@@ -114,7 +115,7 @@ export function guessFieldSchema(
   if (typeof value === 'object') {
     const children: FieldSchema[] = []
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      const child = guessFieldSchema(v, depth + 1)
+      const child = guessFieldSchema(v, depth + 1, maxDepth)
       if (child) {
         child.name = k
         children.push(child)
@@ -133,8 +134,8 @@ export interface FieldSchema {
   children?: FieldSchema[]
 }
 
-function schemaToRows(schema: FieldSchema | null, prefix: string, depth: number): string[] {
-  if (!schema || depth > 6) return []
+function schemaToRows(schema: FieldSchema | null, prefix: string, depth: number, maxDepth: number = 6): string[] {
+  if (!schema || depth > maxDepth) return []
   const rows: string[] = []
   const indent = '&emsp;'.repeat(depth)
 
@@ -142,7 +143,7 @@ function schemaToRows(schema: FieldSchema | null, prefix: string, depth: number)
     for (const child of schema.children) {
       const req = child.required ? '**•**' : ''
       rows.push(`| ${indent}${child.name} | \`${child.type}\` | ${req} |`)
-      rows.push(...schemaToRows(child, '', depth + 1))
+      rows.push(...schemaToRows(child, '', depth + 1, maxDepth))
     }
   } else if (schema.type.startsWith('array<') && schema.children?.[0]) {
     const item = schema.children[0]
@@ -150,7 +151,7 @@ function schemaToRows(schema: FieldSchema | null, prefix: string, depth: number)
       for (const child of item.children) {
         const req = child.required ? '**•**' : ''
         rows.push(`| ${indent}${child.name} | \`${child.type}\` | ${req} |`)
-        rows.push(...schemaToRows(child, '', depth + 1))
+        rows.push(...schemaToRows(child, '', depth + 1, maxDepth))
       }
     } else {
       rows.push(`| ${indent}*items* | \`${item.type}\` | |`)

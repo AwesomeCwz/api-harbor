@@ -34,8 +34,8 @@ const TIMING_KEYS = [
   { key: 'receive', label: 'Receive', color: '#5e8fd9' },
 ]
 
-function SchemaTree({ schema, depth, path, onSelectField }: {
-  schema: FieldSchema; depth: number; path: string[]; onSelectField: (path: string[]) => void
+function SchemaTree({ schema, depth, path, onSelectField, maxDepth }: {
+  schema: FieldSchema; depth: number; path: string[]; onSelectField: (path: string[]) => void; maxDepth: number
 }) {
   const indent = depth * 20
   const isContainer = schema.type === 'object' || schema.type.startsWith('array<')
@@ -56,11 +56,11 @@ function SchemaTree({ schema, depth, path, onSelectField }: {
         <span className="text-[#d4543c]">{schema.type}</span>
         {schema.description && <span className="text-[#8b8b82] text-xs truncate">{schema.description}</span>}
       </div>
-      {isContainer && schema.children && depth < 5 &&
+      {isContainer && schema.children && depth < maxDepth &&
         schema.children.map((c, i) => (
           <SchemaTree key={i} schema={c} depth={isArray ? depth : depth + 1}
             path={isArray ? fieldPath : fieldPath}
-            onSelectField={onSelectField} />
+            onSelectField={onSelectField} maxDepth={maxDepth} />
         ))}
     </div>
   )
@@ -88,10 +88,16 @@ function HeaderTable({ rows }: { rows: { name: string; value: string }[] }) {
 }
 
 export default function RequestDrawer({ request: r, onClose }: Props) {
+  const STORAGE_KEY = 'api-harbor-max-schema-depth'
+
   const [tab, setTab] = useState<Tab>('headers')
   const [visible, setVisible] = useState(false)
   const [copied, setCopied] = useState(false)
   const [highlightPath, setHighlightPath] = useState<string[]>([])
+  const [maxDepth, setMaxDepth] = useState(() => {
+    try { const v = localStorage.getItem(STORAGE_KEY); if (v) return Number(v) } catch {}
+    return 5
+  })
 
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
   useEffect(() => {
@@ -100,13 +106,18 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
     return () => document.removeEventListener('keydown', h)
   }, [])
 
+  const setDepth = useCallback((v: number) => {
+    setMaxDepth(v)
+    try { localStorage.setItem(STORAGE_KEY, String(v)) } catch {}
+  }, [])
+
   const handleClose = useCallback(() => {
     setVisible(false)
     setTimeout(onClose, 220)
   }, [onClose])
 
-  const requestSchema = useMemo(() => (r.requestBody ? guessFieldSchema(r.requestBody) : null), [r.requestBody])
-  const responseSchema = useMemo(() => (r.responseBody ? guessFieldSchema(r.responseBody) : null), [r.responseBody])
+  const requestSchema = useMemo(() => (r.requestBody ? guessFieldSchema(r.requestBody, 0, maxDepth) : null), [r.requestBody, maxDepth])
+  const responseSchema = useMemo(() => (r.responseBody ? guessFieldSchema(r.responseBody, 0, maxDepth) : null), [r.responseBody, maxDepth])
 
   const copyJson = (data: unknown) => {
     navigator.clipboard.writeText(JSON.stringify(data, null, 2))
@@ -196,8 +207,11 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
                 <Section title="Request Body" subtitle={r.contentType || undefined}>
                   {requestSchema && (requestSchema.type === 'object' || requestSchema.type.startsWith('array<')) && requestSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
-                      <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
-                      <SchemaTree schema={requestSchema} depth={0} path={[]} onSelectField={setHighlightPath} />
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider">Schema</span>
+                        <DepthInput value={maxDepth} onChange={setDepth} />
+                      </div>
+                      <SchemaTree schema={requestSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-2">
@@ -217,7 +231,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
                   {responseSchema && (responseSchema.type === 'object' || responseSchema.type.startsWith('array<')) && responseSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
                       <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
-                      <SchemaTree schema={responseSchema} depth={0} path={[]} onSelectField={setHighlightPath} />
+                      <SchemaTree schema={responseSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-2">
@@ -321,5 +335,18 @@ function CopyBtn({ onClick, copied }: { onClick: () => void; copied: boolean }) 
                  text-[#8b8b82] hover:bg-[#f5f3ef] hover:text-[#4a4a42] transition-colors">
       {copied ? 'Copied' : 'Copy'}
     </button>
+  )
+}
+
+function DepthInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <label className="inline-flex items-center gap-1 text-[10px] text-[#8b8b82] font-mono">
+      depth
+      <input type="number" min={1} max={10} value={value}
+        onChange={e => { const v = Number(e.target.value); if (v >= 1 && v <= 10) onChange(v) }}
+        className="w-10 px-1 py-0.5 text-[11px] text-center bg-white border border-[#e4e1db]
+                   rounded text-[#1a1a18] outline-none focus:border-[#d4543c]/40"
+      />
+    </label>
   )
 }
