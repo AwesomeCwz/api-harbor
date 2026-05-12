@@ -141,7 +141,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
 
       {/* Panel */}
       <div
-        className={`absolute right-0 top-0 h-full w-[820px] max-w-[94vw] bg-white
+        className={`absolute right-0 top-0 h-full w-[900px] max-w-[96vw] bg-white
                     border-l border-[#e4e1db] flex flex-col shadow-2xl drawer-panel ${visible ? 'open' : ''}`}
         role="dialog" aria-modal="true"
       >
@@ -163,7 +163,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
         </div>
 
         {/* Meta */}
-        <div className="shrink-0 px-5 py-2 border-b border-[#e4e1db] flex items-center gap-x-5 overflow-hidden">
+        <div className="shrink-0 px-5 py-2 border-b border-[#e4e1db] flex items-center gap-x-5">
           <Meta label="Host" value={r.host} />
           <Meta label="Status"><span className={`font-semibold ${statusCls}`}>{r.status} {r.statusText}</span></Meta>
           <Meta label="Duration" value={`${r.time.toFixed(2)}ms`} mono />
