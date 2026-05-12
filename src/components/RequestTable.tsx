@@ -148,7 +148,7 @@ export default function RequestTable({
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto px-4">
         <table className="w-full">
           <colgroup>
             <col style={{ width: 58 }} />
@@ -209,7 +209,7 @@ export default function RequestTable({
                       }`}
                   >
                     {/* Method */}
-                    <td className="pl-3 pr-0 py-1.5">
+                    <td className="pl-0 pr-0 py-1.5">
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold font-mono border
                         ${METHOD_COLOR[r.method] ?? 'text-[#6b6b65] border-[#c4c1b8] bg-[#f5f3ef]'}`}>
                         {r.method}
@@ -265,7 +265,7 @@ export default function RequestTable({
                     </td>
 
                     {/* Waterfall */}
-                    <td className="pl-2 pr-3 py-1.5">
+                    <td className="pl-2 pr-0 py-1.5">
                       <Waterfall timings={r.timings} totalTime={r.time} maxTime={maxTime} />
                     </td>
                   </tr>
@@ -277,7 +277,7 @@ export default function RequestTable({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-1.5 border-t border-[#e4e1db] text-[10px] text-[#8b8b82] font-mono
+      <div className="px-5 py-1.5 border-t border-[#e4e1db] text-[10px] text-[#8b8b82] font-mono
                       flex items-center justify-between shrink-0">
         <span>
           {filtered.length} of {requests.length} request{requests.length !== 1 ? 's' : ''}
