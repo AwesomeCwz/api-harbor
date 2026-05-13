@@ -67,10 +67,14 @@ export default function App() {
   const [methodFilter, setMethodFilter] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState<string[]>([])
   const [cacheLoaded, setCacheLoaded] = useState(false)
+  const [cacheEnabled, setCacheEnabled] = useState(() => {
+    try { return localStorage.getItem('api-harbor-cache-enabled') !== '0' } catch { return true }
+  })
 
   // Load cached files on mount
   useEffect(() => {
-    (async () => {
+    if (!cacheEnabled) { setCacheLoaded(true); return }
+    ;(async () => {
       const cached = await loadCache()
       if (cached.length === 0) { setCacheLoaded(true); return }
       const results: FileData[] = []
@@ -109,14 +113,16 @@ export default function App() {
     setFiles((prev) => {
       const next = [...prev, ...results]
       // Async: merge with existing cache
-      ;(async () => {
-        const existing = (await loadCache()).filter(c => !cacheEntries.some(e => e.name === c.name))
-        await saveCache([...existing, ...cacheEntries])
-      })()
+      if (cacheEnabled) {
+        ;(async () => {
+          const existing = (await loadCache()).filter(c => !cacheEntries.some(e => e.name === c.name))
+          await saveCache([...existing, ...cacheEntries])
+        })()
+      }
       return next
     })
     setParsing(false)
-  }, [])
+  }, [cacheEnabled])
 
   const handleRemoveFile = useCallback((name: string) => {
     setFiles((prev) => prev.filter((f) => f.name !== name))
@@ -133,6 +139,12 @@ export default function App() {
     setFileFilter(prev =>
       prev.includes(name) ? prev.filter(f => f !== name) : [...prev, name]
     )
+  }, [])
+
+  const toggleCache = useCallback((on: boolean) => {
+    setCacheEnabled(on)
+    try { localStorage.setItem('api-harbor-cache-enabled', on ? '1' : '0') } catch {}
+    if (!on) clearCache()
   }, [])
 
   const handleReset = useCallback(() => {
@@ -195,6 +207,8 @@ export default function App() {
                 onClearError={() => setParseError('')}
                 fileFilter={fileFilter}
                 onToggleFileFilter={toggleFileFilter}
+                cacheEnabled={cacheEnabled}
+                onToggleCache={toggleCache}
               />
             )}
           </div>
@@ -213,6 +227,8 @@ export default function App() {
               compact
               fileFilter={fileFilter}
               onToggleFileFilter={toggleFileFilter}
+              cacheEnabled={cacheEnabled}
+              onToggleCache={toggleCache}
             />
           </div>
 

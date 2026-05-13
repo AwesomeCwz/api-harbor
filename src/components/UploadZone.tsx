@@ -13,12 +13,15 @@ interface Props {
   compact?: boolean
   fileFilter?: string[]
   onToggleFileFilter?: (name: string) => void
+  cacheEnabled?: boolean
+  onToggleCache?: (on: boolean) => void
 }
 
 export default function UploadZone({
   onParse, files, onRemoveFile, parsing,
   error: externalError, onClearError, compact,
   fileFilter, onToggleFileFilter,
+  cacheEnabled, onToggleCache,
 }: Props) {
   const [dragOver, setDragOver] = useState(false)
   const [localError, setLocalError] = useState('')
@@ -102,6 +105,15 @@ export default function UploadZone({
           </>
         )}
         {displayError && <p className="text-[11px] text-[#c5221f] shrink-0 font-mono">{displayError}</p>}
+        {onToggleCache && (
+          <label className="inline-flex items-center gap-1 text-[10px] text-[#8b8b82] font-mono cursor-pointer shrink-0"
+                 title="Cache HAR files in browser for next visit">
+            <input type="checkbox" checked={cacheEnabled ?? true}
+              onChange={e => onToggleCache(e.target.checked)}
+              className="w-3 h-3 accent-[#d4543c] cursor-pointer" />
+            cache
+          </label>
+        )}
       </div>
     )
   }
