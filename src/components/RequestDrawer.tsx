@@ -119,11 +119,25 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
   const requestSchema = useMemo(() => (r.requestBody ? guessFieldSchema(r.requestBody, 0, maxDepth) : null), [r.requestBody, maxDepth])
   const responseSchema = useMemo(() => (r.responseBody ? guessFieldSchema(r.responseBody, 0, maxDepth) : null), [r.responseBody, maxDepth])
 
-  const copyJson = (data: unknown) => {
-    navigator.clipboard.writeText(JSON.stringify(data, null, 2))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }
+  const copyJson = useCallback((data: unknown) => {
+    const text = JSON.stringify(data, null, 2)
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      }).catch(() => {})
+    } else {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'; ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+  }, [])
 
   const sd = String(r.status)[0]
   const statusCls = sd === '2' ? 'text-[#137333]' : sd === '3' ? 'text-[#1967d2]' : sd === '4' ? 'text-[#b06000]' : 'text-[#c5221f]'
