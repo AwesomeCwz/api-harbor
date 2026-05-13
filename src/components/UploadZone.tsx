@@ -54,7 +54,7 @@ export default function UploadZone({
                 key={f.name}
                 onClick={() => onToggleFileFilter?.(f.name)}
                 className={`inline-flex items-center gap-1 px-2 py-1 rounded-md
-                  text-xs font-mono border transition-all
+                  text-xs font-mono border transition-all cursor-pointer
                   ${active
                     ? 'border-[#d4543c]/40 bg-[#fef5f3] text-[#d4543c]'
                     : 'border-[#e4e1db] text-[#8b8b82] hover:border-[#c4c1b8] hover:text-[#4a4a42]'
@@ -64,7 +64,7 @@ export default function UploadZone({
                 <span className={`text-[10px] ${active ? 'text-[#d4543c]/70' : 'text-[#b8b5ae]'}`}>({f.apis.length})</span>
                 <span
                   onClick={e => { e.stopPropagation(); onRemoveFile(f.name) }}
-                  className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-sm
+                  className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-sm cursor-pointer
                              text-[#b8b5ae] hover:text-[#c5221f] hover:bg-red-50 transition-colors"
                   role="button" tabIndex={0}
                 >
@@ -92,7 +92,7 @@ export default function UploadZone({
               onDragOver={e => { e.preventDefault(); setDragOver(true) }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              className={`shrink-0 px-2.5 py-1 text-xs rounded-md font-mono border transition-all
+              className={`shrink-0 px-2.5 py-1 text-xs rounded-md font-mono border transition-all cursor-pointer
                 ${dragOver
                   ? 'border-[#d4543c] bg-[#fef5f3] text-[#d4543c]'
                   : 'border-[#e4e1db] text-[#8b8b82] hover:border-[#c4c1b8] hover:text-[#4a4a42] hover:bg-[#f5f3ef]'

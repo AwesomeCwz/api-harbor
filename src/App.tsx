@@ -1,10 +1,26 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import type { ParsedAPI } from './types/har'
 import type { SortMode } from './lib/parser'
 import { parseHAR } from './lib/parser'
 import UploadZone from './components/UploadZone'
 import RequestTable from './components/RequestTable'
 import RequestDrawer from './components/RequestDrawer'
+
+const CACHE_KEY = 'api-harbor-files'
+
+interface CacheEntry { name: string; text: string }
+
+function loadCache(): CacheEntry[] {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {}
+  return []
+}
+
+function saveCache(entries: CacheEntry[]) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(entries)) } catch {}
+}
 
 interface FileData {
   name: string
@@ -22,6 +38,21 @@ export default function App() {
   const [searchFields, setSearchFields] = useState<string[]>(['url','host','method','status','type','initiator','body'])
   const [methodFilter, setMethodFilter] = useState<string[]>([])
   const [statusFilter, setStatusFilter] = useState<string[]>([])
+  const [cacheLoaded, setCacheLoaded] = useState(false)
+
+  // Load cached files on mount
+  useEffect(() => {
+    const cached = loadCache()
+    if (cached.length === 0) { setCacheLoaded(true); return }
+    ;(async () => {
+      const results: FileData[] = []
+      for (const { name, text } of cached) {
+        try { results.push({ name, apis: parseHAR(text, name) }) } catch {}
+      }
+      if (results.length > 0) setFiles(results)
+      setCacheLoaded(true)
+    })()
+  }, [])
 
   const requests = useMemo(
     () => files.flatMap((f) => f.apis),
@@ -33,11 +64,13 @@ export default function App() {
     setParseError('')
     const results: FileData[] = []
     const errors: string[] = []
+    const cacheEntries: CacheEntry[] = []
 
     for (const file of Array.from(fileList)) {
       try {
         const text = await file.text()
         results.push({ name: file.name, apis: parseHAR(text, file.name) })
+        cacheEntries.push({ name: file.name, text })
       } catch (err) {
         errors.push(file.name)
         console.error(`Failed to parse ${file.name}:`, err)
@@ -45,7 +78,13 @@ export default function App() {
     }
 
     if (errors.length > 0) setParseError(`Failed: ${errors.join(', ')}`)
-    setFiles((prev) => [...prev, ...results])
+    setFiles((prev) => {
+      const next = [...prev, ...results]
+      // Sync cache: deduplicate by name, keep latest
+      const existing = loadCache().filter(c => !cacheEntries.some(e => e.name === c.name))
+      saveCache([...existing, ...cacheEntries])
+      return next
+    })
     setParsing(false)
   }, [])
 
@@ -53,6 +92,9 @@ export default function App() {
     setFiles((prev) => prev.filter((f) => f.name !== name))
     setFileFilter((prev) => prev.filter(f => f !== name))
     setSelected(null)
+    const cached = loadCache().filter(c => c.name !== name)
+    if (cached.length > 0) saveCache(cached)
+    else { try { localStorage.removeItem(CACHE_KEY) } catch {} }
   }, [])
 
   const toggleFileFilter = useCallback((name: string) => {
@@ -67,6 +109,7 @@ export default function App() {
     setSearch('')
     setParseError('')
     setFileFilter([])
+    try { localStorage.removeItem(CACHE_KEY) } catch {}
   }, [])
 
   return (
@@ -87,7 +130,7 @@ export default function App() {
             </span>
             <button
               onClick={handleReset}
-              className="px-2.5 py-1 text-[11px] rounded-md font-mono
+              className="px-2.5 py-1 text-[11px] rounded-md font-mono cursor-pointer
                          border border-[#e4e1db] text-[#8b8b82]
                          hover:border-[#c4c1b8] hover:text-[#4a4a42] hover:bg-[#f5f3ef]
                          transition-colors"
@@ -102,13 +145,13 @@ export default function App() {
       {files.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-lg">
-            {parsing ? (
+            {(parsing || !cacheLoaded) ? (
               <div className="flex flex-col items-center gap-3 text-[#8b8b82]">
                 <svg className="w-8 h-8 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.2" />
                   <path d="M12 2a10 10 0 019.95 9" stroke="currentColor" strokeWidth="2" opacity="0.7" />
                 </svg>
-                <span className="text-sm font-mono">Parsing HAR...</span>
+                <span className="text-sm font-mono">Loading...</span>
               </div>
             ) : (
               <UploadZone

@@ -129,7 +129,7 @@ export default function RequestTable({
           {search && (
             <button onClick={() => onSearchChange('')}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 w-5 h-5
-                         flex items-center justify-center rounded text-[#b8b5ae]
+                         flex items-center justify-center rounded text-[#b8b5ae] cursor-pointer
                          hover:text-[#4a4a42] hover:bg-[#e4e1db] transition-colors">
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -177,7 +177,7 @@ export default function RequestTable({
               <Th right>
                 <button
                   onClick={() => onSortMode(sortMode === 'duration' ? 'startTime' : 'duration')}
-                  className="flex items-center gap-1 hover:text-[#1a1a18] transition-colors"
+                  className="flex items-center gap-1 hover:text-[#1a1a18] transition-colors cursor-pointer"
                 >
                   {sortMode === 'startTime' ? 'Time' : 'Dur'}
                   <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -312,7 +312,7 @@ function SearchFieldsDropdown({ fields, labels, selected, onChange }: {
     <div className="relative shrink-0">
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1 px-2 py-1.5 text-[11px] rounded-lg font-mono border transition-colors
+        className={`flex items-center gap-1 px-2 py-1.5 text-[11px] rounded-lg font-mono border transition-colors cursor-pointer
           ${allSelected
             ? 'border-[#e4e1db] text-[#8b8b82] hover:border-[#c4c1b8]'
             : 'border-[#d4543c]/30 text-[#d4543c] bg-[#fef5f3]'
@@ -332,7 +332,7 @@ function SearchFieldsDropdown({ fields, labels, selected, onChange }: {
             <button
               onClick={toggleAll}
               className="w-full text-left px-3 py-1.5 text-[11px] text-[#8b8b82] font-mono
-                         hover:bg-[#f5f3ef] border-b border-[#f0ede8]"
+                         hover:bg-[#f5f3ef] border-b border-[#f0ede8] cursor-pointer"
             >
               {allSelected ? 'Deselect all' : 'Select all'}
             </button>
@@ -341,7 +341,7 @@ function SearchFieldsDropdown({ fields, labels, selected, onChange }: {
               return (
                 <button key={key} onClick={() => toggle(key)}
                   className={`w-full flex items-center gap-2 px-3 py-1 text-[12px] font-mono
-                    hover:bg-[#f5f3ef] transition-colors
+                    hover:bg-[#f5f3ef] transition-colors cursor-pointer
                     ${checked ? 'text-[#1a1a18]' : 'text-[#b8b5ae]'}`}
                 >
                   <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0
@@ -379,7 +379,7 @@ function ColumnFilter({ label, options, selected, onChange }: {
     <div className="relative inline-flex items-center">
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider
+        className={`flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider cursor-pointer
           transition-colors ${active ? 'text-[#d4543c]' : 'text-[#8b8b82] hover:text-[#1a1a18]'}`}
       >
         {label}
@@ -400,7 +400,7 @@ function ColumnFilter({ label, options, selected, onChange }: {
               return (
                 <button key={opt} onClick={() => toggle(opt)}
                   className={`w-full flex items-center gap-2 px-3 py-1 text-[11px] font-mono
-                    hover:bg-[#f5f3ef] transition-colors
+                    hover:bg-[#f5f3ef] transition-colors cursor-pointer
                     ${checked ? 'text-[#1a1a18]' : 'text-[#b8b5ae]'}`}
                 >
                   <span className={`w-3 h-3 rounded border flex items-center justify-center shrink-0

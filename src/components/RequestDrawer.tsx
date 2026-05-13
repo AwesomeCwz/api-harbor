@@ -162,7 +162,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
         {/* Close + Header */}
         <div className="shrink-0 px-5 py-3 border-b border-[#e4e1db] flex items-center gap-3">
           <button onClick={handleClose}
-            className="w-7 h-7 flex items-center justify-center rounded-md
+            className="w-7 h-7 flex items-center justify-center rounded-md cursor-pointer
                        border border-[#e4e1db] text-[#8b8b82]
                        hover:text-[#1a1a18] hover:border-[#c4c1b8] hover:bg-[#f5f3ef] transition-colors">
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -191,7 +191,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
         <div className="shrink-0 flex border-b border-[#e4e1db] px-5">
           {TABS.map(({ key, label }) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`relative px-4 py-2.5 text-[12px] font-medium transition-colors
+              className={`relative px-4 py-2.5 text-[12px] font-medium transition-colors cursor-pointer
                 ${tab === key ? 'text-[#1a1a18]' : 'text-[#8b8b82] hover:text-[#4a4a42]'}`}>
               {label}
               {tab === key && <span className="absolute bottom-0 left-1 right-1 h-0.5 bg-[#d4543c] rounded-full" />}
@@ -344,7 +344,7 @@ function Section({ title, count, subtitle, children }: {
 function CopyBtn({ onClick, copied }: { onClick: () => void; copied: boolean }) {
   return (
     <button onClick={onClick}
-      className="px-2 py-0.5 text-[11px] rounded-md border border-[#e4e1db]
+      className="px-2 py-0.5 text-[11px] rounded-md border border-[#e4e1db] cursor-pointer
                  text-[#8b8b82] hover:bg-[#f5f3ef] hover:text-[#4a4a42] transition-colors">
       {copied ? 'Copied' : 'Copy'}
     </button>
@@ -389,7 +389,7 @@ function DepthInput({ value, onChange }: { value: number; onChange: (v: number) 
           <div className="flex items-start gap-2">
             <span>控制 Schema 字段解析深度，<br />数值越大嵌套层级越深</span>
             <button onClick={dismissHint}
-              className="text-[#b8b5ae] hover:text-white shrink-0 mt-0.5">
+              className="text-[#b8b5ae] hover:text-white shrink-0 mt-0.5 cursor-pointer">
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
