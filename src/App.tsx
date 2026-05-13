@@ -6,20 +6,48 @@ import UploadZone from './components/UploadZone'
 import RequestTable from './components/RequestTable'
 import RequestDrawer from './components/RequestDrawer'
 
-const CACHE_KEY = 'api-harbor-files'
+const DB_NAME = 'api-harbor'
+const STORE_NAME = 'files'
 
 interface CacheEntry { name: string; text: string }
 
-function loadCache(): CacheEntry[] {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return []
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1)
+    req.onupgradeneeded = () => { req.result.createObjectStore(STORE_NAME, { keyPath: 'name' }) }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
 }
 
-function saveCache(entries: CacheEntry[]) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(entries)) } catch {}
+async function loadCache(): Promise<CacheEntry[]> {
+  try {
+    const db = await openDB()
+    return new Promise(resolve => {
+      const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll()
+      req.onsuccess = () => { db.close(); resolve(req.result) }
+      req.onerror = () => { db.close(); resolve([]) }
+    })
+  } catch { return [] }
+}
+
+async function saveCache(entries: CacheEntry[]) {
+  try {
+    const db = await openDB()
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    const store = tx.objectStore(STORE_NAME)
+    store.clear()
+    for (const e of entries) store.put(e)
+    db.close()
+  } catch {}
+}
+
+async function clearCache() {
+  try {
+    const db = await openDB()
+    db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).clear()
+    db.close()
+  } catch {}
 }
 
 interface FileData {
@@ -42,9 +70,9 @@ export default function App() {
 
   // Load cached files on mount
   useEffect(() => {
-    const cached = loadCache()
-    if (cached.length === 0) { setCacheLoaded(true); return }
-    ;(async () => {
+    (async () => {
+      const cached = await loadCache()
+      if (cached.length === 0) { setCacheLoaded(true); return }
       const results: FileData[] = []
       for (const { name, text } of cached) {
         try { results.push({ name, apis: parseHAR(text, name) }) } catch {}
@@ -80,9 +108,11 @@ export default function App() {
     if (errors.length > 0) setParseError(`Failed: ${errors.join(', ')}`)
     setFiles((prev) => {
       const next = [...prev, ...results]
-      // Sync cache: deduplicate by name, keep latest
-      const existing = loadCache().filter(c => !cacheEntries.some(e => e.name === c.name))
-      saveCache([...existing, ...cacheEntries])
+      // Async: merge with existing cache
+      ;(async () => {
+        const existing = (await loadCache()).filter(c => !cacheEntries.some(e => e.name === c.name))
+        await saveCache([...existing, ...cacheEntries])
+      })()
       return next
     })
     setParsing(false)
@@ -92,9 +122,11 @@ export default function App() {
     setFiles((prev) => prev.filter((f) => f.name !== name))
     setFileFilter((prev) => prev.filter(f => f !== name))
     setSelected(null)
-    const cached = loadCache().filter(c => c.name !== name)
-    if (cached.length > 0) saveCache(cached)
-    else { try { localStorage.removeItem(CACHE_KEY) } catch {} }
+    ;(async () => {
+      const cached = (await loadCache()).filter(c => c.name !== name)
+      if (cached.length > 0) await saveCache(cached)
+      else await clearCache()
+    })()
   }, [])
 
   const toggleFileFilter = useCallback((name: string) => {
@@ -109,7 +141,7 @@ export default function App() {
     setSearch('')
     setParseError('')
     setFileFilter([])
-    try { localStorage.removeItem(CACHE_KEY) } catch {}
+    clearCache()
   }, [])
 
   return (

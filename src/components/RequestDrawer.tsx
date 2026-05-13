@@ -34,19 +34,23 @@ const TIMING_KEYS = [
   { key: 'receive', label: 'Receive', color: '#5e8fd9' },
 ]
 
-function SchemaTree({ schema, depth, path, onSelectField, maxDepth }: {
+function SchemaTree({ schema, depth, path, onSelectField, maxDepth, selectedPath }: {
   schema: FieldSchema; depth: number; path: string[]; onSelectField: (path: string[]) => void; maxDepth: number
+  selectedPath: string[]
 }) {
   const indent = depth * 20
   const isContainer = schema.type === 'object' || schema.type.startsWith('array<')
   const isArray = schema.type.startsWith('array<')
   const fieldPath = schema.name ? [...path, schema.name] : path
+  const selected = schema.name && fieldPath.length === selectedPath.length &&
+    fieldPath.every((s, i) => s === selectedPath[i])
 
   return (
     <div>
       <div
-        className="flex items-center gap-2 py-0.5 font-mono text-[13px] cursor-pointer
-                   hover:bg-[#fef5f3] rounded transition-colors -ml-1 px-1"
+        className={`flex items-center gap-2 py-0.5 font-mono text-[13px] cursor-pointer
+                   rounded transition-colors -ml-1 px-1
+                   ${selected ? 'bg-[#fde8e4]' : 'hover:bg-[#fef5f3]'}`}
         style={{ paddingLeft: indent }}
         onClick={() => schema.name && onSelectField(fieldPath)}
         title={schema.name ? fieldPath.join('.') : undefined}
@@ -60,7 +64,7 @@ function SchemaTree({ schema, depth, path, onSelectField, maxDepth }: {
         schema.children.map((c, i) => (
           <SchemaTree key={i} schema={c} depth={isArray ? depth : depth + 1}
             path={isArray ? fieldPath : fieldPath}
-            onSelectField={onSelectField} maxDepth={maxDepth} />
+            onSelectField={onSelectField} maxDepth={maxDepth} selectedPath={selectedPath} />
         ))}
     </div>
   )
@@ -224,7 +228,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
                   {requestSchema && (requestSchema.type === 'object' || requestSchema.type.startsWith('array<')) && requestSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
                       <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
-                      <SchemaTree schema={requestSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} />
+                      <SchemaTree schema={requestSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} selectedPath={highlightPath} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-2">
@@ -244,7 +248,7 @@ export default function RequestDrawer({ request: r, onClose }: Props) {
                   {responseSchema && (responseSchema.type === 'object' || responseSchema.type.startsWith('array<')) && responseSchema.children && (
                     <div className="bg-[#f5f3ef] p-3 rounded-lg mb-3 border border-[#e4e1db]">
                       <div className="text-[10px] font-semibold text-[#8b8b82] uppercase tracking-wider mb-2">Schema</div>
-                      <SchemaTree schema={responseSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} />
+                      <SchemaTree schema={responseSchema} depth={0} path={[]} onSelectField={setHighlightPath} maxDepth={maxDepth} selectedPath={highlightPath} />
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-2">
